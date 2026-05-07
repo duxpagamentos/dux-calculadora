@@ -6,6 +6,7 @@
   <title>Economia Tributária com Conta SPLIT — Dux Pagamentos</title>
   <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&f[]=clash-display@500,600,700&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     :root, [data-theme="light"] {
       --text-xs: clamp(0.75rem, 0.7rem + 0.25vw, 0.875rem);
@@ -424,7 +425,7 @@
                 <div class="result-item"><span class="label">Faturamento</span><span class="value" id="rFatPixNovo">R$ 0,00</span></div>
                 <div class="result-item"><span class="label">Taxa Pix Dux</span><span class="value" id="rTaxaPixNova">R$ 0,00</span></div>
               </div>
-              <div class="result-item"><span class="label">Taxa de transferência (1,25%)</span><span class="value" id="rTaxaTransfer">R$ 0,00</span></div>
+              <div class="result-item"><span class="label">Taxa de serviço (1,25%)</span><span class="value" id="rTaxaTransfer">R$ 0,00</span></div>
               <div class="result-item total"><span class="label">Custo total</span><span class="value" id="rTotalNovo">R$ 0,00</span></div>
             </div>
           </article>
@@ -679,7 +680,7 @@
       renderLines('rCartaoAtualLines', cartaoAtualLines);
       renderLines('rCartaoNovoLines', cartaoNovoLines);
 
-      const pitch = `Hoje, somando cartão (${money(fatCartao)}) e Pix (${money(fatPix)}), seu cliente fatura ${money(fatTotal)} por mês e paga ${money(impostoAtual)} de imposto sobre o total. Direcionando ${pct(splitPct)} desse faturamento para fornecedores via conta SPLIT, esse valor não entra na base tributável e o imposto cai para ${money(impostoNovo)} — uma economia tributária de ${money(impostoEconomizado)} por mês, ou ${money(impostoEconomizado*12)} por ano. Mesmo somando as taxas Dux Pagamentos e a taxa de transferência de 1,25%, o custo total final é ${money(totalNovo)} contra ${money(totalAtual)} de hoje — uma redução de ${pct(reducao)}.`;
+      const pitch = `Hoje, somando cartão (${money(fatCartao)}) e Pix (${money(fatPix)}), seu cliente fatura ${money(fatTotal)} por mês e paga ${money(impostoAtual)} de imposto sobre o total. Direcionando ${pct(splitPct)} desse faturamento para fornecedores via conta SPLIT, esse valor não entra na base tributável e o imposto cai para ${money(impostoNovo)} — uma economia tributária de ${money(impostoEconomizado)} por mês, ou ${money(impostoEconomizado*12)} por ano. Mesmo somando as taxas Dux Pagamentos e a taxa de serviço de 1,25%, o custo total final é ${money(totalNovo)} contra ${money(totalAtual)} de hoje — uma redução de ${pct(reducao)}.`;
       $('pitchAuto').textContent = pitch;
 
       estadoCalculo = {
@@ -787,7 +788,7 @@
         ['Imposto estimado', money(e.impostoNovo)],
         [`${e.labelCartaoNovo} · subtotal`, money(e.custoCartaoNovo)],
         ['Pix · taxa Dux', money(e.custoPixNovo)],
-        ['Transferência (1,25%)', money(e.custoTransfer)],
+        ['Taxa de serviço (1,25%)', money(e.custoTransfer)],
       ];
 
       let yi = y + 60;
@@ -870,15 +871,54 @@
 
     $('btnPdf').addEventListener('click', gerarPDF);
 
+    // =====================================================================
+    // CONEXÃO COM SUPABASE — carrega taxas do banco se disponível
+    // =====================================================================
+    const SUPABASE_URL = 'https://qibhvyzdqgsvwjqvanbx.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_RiE_PaAwhfSGkoTXhevqww_yb_rkK7s';
+
+    async function carregarTaxasDoBanco(){
+      try {
+        const supa = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // Carrega as 3 taxas de perfil
+        const { data: taxas, error: e1 } = await supa.from('taxas_dux').select('*');
+        if (e1) throw e1;
+
+        // Carrega configs gerais
+        const { data: configs, error: e2 } = await supa.from('config_geral').select('*');
+        if (e2) throw e2;
+
+        // Atualiza objeto TAXAS_DUX com valores do banco
+        taxas.forEach(row => {
+          if (row.perfil === 1) TAXAS_DUX.perfil1 = { ...TAXAS_DUX.perfil1, ...row.dados };
+          if (row.perfil === 2) TAXAS_DUX.perfil2 = { ...TAXAS_DUX.perfil2, ...row.dados };
+          if (row.perfil === 3) TAXAS_DUX.perfil3 = { ...TAXAS_DUX.perfil3, ...row.dados };
+        });
+        configs.forEach(c => {
+          if (c.chave === 'taxa_transferencia') TAXAS_DUX.geral.taxaTransferencia = parseFloat(c.valor);
+          if (c.chave === 'limite_split') TAXAS_DUX.geral.limiteSplit = parseFloat(c.valor);
+        });
+
+        console.log('[Dux] Taxas carregadas do Supabase com sucesso');
+      } catch (err) {
+        console.warn('[Dux] Falha ao carregar do Supabase, usando taxas locais:', err.message);
+      }
+    }
+
+    // Boot — carrega taxas do banco antes de inicializar a UI
+    (async () => {
+      await carregarTaxasDoBanco();
+      preencherTaxasDux();
+      selecionarPerfil(1);
+    })();
+
     (function(){
       const t=document.querySelector('[data-theme-toggle]'), r=document.documentElement;
       let d=matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light';
       r.setAttribute('data-theme',d);
       t.addEventListener('click',()=>{d=d==='dark'?'light':'dark';r.setAttribute('data-theme',d);});
     })();
-
-    preencherTaxasDux();
-    selecionarPerfil(1);
   </script>
 </body>
 </html>
