@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Economia Tributária com Conta SPLIT — Dux Pagamentos</title>
+  <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&f[]=clash-display@500,600,700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    :root, [data-theme="light"] {
+      --text-xs: clamp(0.75rem, 0.7rem + 0.25vw, 0.875rem);
+      --text-sm: clamp(0.875rem, 0.8rem + 0.35vw, 1rem);
+      --text-base: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
+      --text-lg: clamp(1.125rem, 1rem + 0.75vw, 1.5rem);
+      --text-xl: clamp(1.5rem, 1.2rem + 1.25vw, 2.25rem);
+      --text-2xl: clamp(2rem, 1.2rem + 2.5vw, 3.5rem);
+      --space-1: .25rem; --space-2: .5rem; --space-3: .75rem; --space-4: 1rem; --space-5: 1.25rem; --space-6: 1.5rem; --space-8: 2rem; --space-10: 2.5rem; --space-12: 3rem;
+      --color-bg: #f7f6f2; --color-surface: #f9f8f5; --color-surface-2: #fbfbf9; --color-surface-offset: #edeae5; --color-border: #d4d1ca;
+      --color-text: #28251d; --color-text-muted: #6d6b65; --color-text-faint: #9c9992; --color-text-inverse: #f9f8f4;
+      --color-primary: #01696f; --color-primary-hover: #0c4e54; --color-success: #437a22; --color-warning: #964219; --color-error: #a12c7b;
+      --radius-sm: .375rem; --radius-md: .75rem; --radius-lg: 1rem; --radius-xl: 1.5rem; --radius-full: 9999px;
+      --shadow-sm: 0 1px 2px rgba(20,20,20,.05); --shadow-md: 0 10px 30px rgba(20,20,20,.08); --shadow-lg: 0 20px 60px rgba(20,20,20,.12);
+      --font-body: 'Satoshi', 'Inter', sans-serif; --font-display: 'Clash Display', 'Satoshi', sans-serif;
+    }
+    [data-theme="dark"] {
+      --color-bg: #171614; --color-surface: #1c1b19; --color-surface-2: #201f1d; --color-surface-offset: #22211f; --color-border: #393836;
+      --color-text: #cdccca; --color-text-muted: #a7a5a0; --color-text-faint: #7a7974; --color-text-inverse: #171614;
+      --color-primary: #4f98a3; --color-primary-hover: #227f8b; --color-success: #7eb55b; --color-warning: #d68d5d; --color-error: #d163a7;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,.2); --shadow-md: 0 12px 32px rgba(0,0,0,.35); --shadow-lg: 0 24px 60px rgba(0,0,0,.5);
+    }
+    *,*::before,*::after{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{margin:0;font-family:var(--font-body);font-size:var(--text-base);line-height:1.6;background:var(--color-bg);color:var(--color-text);-webkit-font-smoothing:antialiased}
+    h1,h2,h3,h4{line-height:1.1;margin:0;font-family:var(--font-display);letter-spacing:-.02em}
+    p{margin:0;max-width:72ch}
+    a{text-decoration:none;color:inherit}
+    button,input,select{font:inherit}
+    .container{width:min(1280px,calc(100% - 2rem));margin-inline:auto}
+
+    .site-header{position:sticky;top:0;z-index:50;background:color-mix(in srgb,var(--color-bg) 88%, transparent);backdrop-filter:blur(14px);border-bottom:1px solid color-mix(in srgb,var(--color-text) 12%, transparent)}
+    .nav{display:flex;align-items:center;justify-content:space-between;padding:var(--space-4) 0;gap:var(--space-4)}
+    .brand{display:flex;align-items:center;gap:.9rem;font-weight:700}
+    .logo{width:42px;height:42px;border-radius:14px;background:linear-gradient(135deg,var(--color-primary),color-mix(in srgb,var(--color-primary) 55%, white));display:grid;place-items:center;color:var(--color-text-inverse);box-shadow:var(--shadow-sm)}
+    .logo svg{width:24px;height:24px}
+    .nav-actions{display:flex;gap:.75rem;align-items:center}
+    .theme-toggle{width:44px;height:44px;background:var(--color-surface);border:1px solid color-mix(in srgb,var(--color-text) 10%, transparent);border-radius:var(--radius-full);cursor:pointer;display:grid;place-items:center;color:var(--color-text);transition:.2s ease}
+    .theme-toggle:hover{background:var(--color-surface-offset)}
+
+    .hero{padding:clamp(2.5rem,5vw,4rem) 0 var(--space-6)}
+    .hero-grid{display:grid;grid-template-columns:1fr;gap:var(--space-6);align-items:start;max-width:780px}
+    .eyebrow{display:inline-flex;gap:.5rem;align-items:center;padding:.5rem .9rem;border-radius:var(--radius-full);background:color-mix(in srgb,var(--color-primary) 10%, var(--color-surface));color:var(--color-primary);font-size:var(--text-sm);font-weight:700;margin-bottom:var(--space-4);border:1px solid color-mix(in srgb,var(--color-primary) 18%, transparent)}
+    .eyebrow::before{content:"";width:6px;height:6px;border-radius:999px;background:var(--color-primary);box-shadow:0 0 0 4px color-mix(in srgb,var(--color-primary) 22%, transparent)}
+    .hero h1{font-size:var(--text-2xl);font-weight:600;max-width:18ch;margin-bottom:var(--space-4)}
+    .hero h1 em{font-style:normal;color:var(--color-primary);position:relative;white-space:nowrap}
+    .hero h1 em::after{content:"";position:absolute;left:0;right:0;bottom:-.05em;height:.18em;background:color-mix(in srgb,var(--color-primary) 25%, transparent);border-radius:999px;z-index:-1}
+    .hero p{color:var(--color-text-muted);margin-bottom:var(--space-5);font-size:var(--text-base)}
+
+    section{padding:var(--space-6) 0 var(--space-10)}
+
+    .profile-selector{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-4);margin-bottom:var(--space-5)}
+    .profile-card{background:var(--color-surface);border:2px solid color-mix(in srgb,var(--color-text) 10%, transparent);border-radius:var(--radius-xl);padding:var(--space-5);cursor:pointer;transition:.2s ease;text-align:left;position:relative;font-family:var(--font-body)}
+    .profile-card:hover{border-color:color-mix(in srgb,var(--color-primary) 30%, transparent);transform:translateY(-2px);box-shadow:var(--shadow-md)}
+    .profile-card.active{border-color:var(--color-primary);background:color-mix(in srgb,var(--color-primary) 6%, var(--color-surface));box-shadow:var(--shadow-md)}
+    .profile-card.active::after{content:"✓";position:absolute;top:14px;right:14px;width:24px;height:24px;background:var(--color-primary);color:var(--color-text-inverse);border-radius:999px;display:grid;place-items:center;font-weight:700;font-size:13px}
+    .profile-icon{width:42px;height:42px;border-radius:12px;background:color-mix(in srgb,var(--color-primary) 10%, transparent);display:grid;place-items:center;color:var(--color-primary);margin-bottom:var(--space-3)}
+    .profile-card.active .profile-icon{background:var(--color-primary);color:var(--color-text-inverse)}
+    .profile-icon svg{width:22px;height:22px}
+    .profile-title{font-family:var(--font-display);font-size:var(--text-lg);font-weight:600;margin-bottom:.25rem;letter-spacing:-.02em;color:var(--color-text)}
+    .profile-desc{color:var(--color-text-muted);font-size:var(--text-sm);line-height:1.4}
+    .profile-tag{display:inline-block;font-size:var(--text-xs);font-weight:700;color:var(--color-primary);text-transform:uppercase;letter-spacing:.05em;margin-top:.5rem}
+
+    .card,.result-card{background:var(--color-surface);border:1px solid color-mix(in srgb,var(--color-text) 10%, transparent);border-radius:var(--radius-xl);box-shadow:var(--shadow-sm)}
+    .form-card{padding:var(--space-6)}
+    .form-card .form-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:end;gap:var(--space-3);margin-bottom:var(--space-4)}
+    .form-card h3{font-size:var(--text-lg);font-weight:600;margin-bottom:.25rem}
+    .form-card .helper{color:var(--color-text-muted);font-size:var(--text-sm)}
+
+    .form-section-title{font-family:var(--font-body);font-size:var(--text-xs);font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--color-text-muted);margin:var(--space-5) 0 var(--space-3) 0;display:flex;align-items:center;gap:.6rem}
+    .form-section-title::before{content:"";width:6px;height:6px;border-radius:999px;background:var(--color-primary)}
+    .form-section-title:first-of-type{margin-top:0}
+
+    .form-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--space-4);align-items:start}
+    .form-grid.cols-3{grid-template-columns:repeat(3,1fr)}
+    .form-grid.cols-2{grid-template-columns:repeat(2,1fr)}
+
+    .field{display:grid;gap:.4rem;align-content:start}
+    .field label{font-size:var(--text-sm);font-weight:700;color:var(--color-text);line-height:1.3;min-height:2.6em;display:flex;align-items:flex-end;gap:.4rem}
+    .field label .lock{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;color:var(--color-text-faint);opacity:.7}
+    .field label .lock svg{width:12px;height:12px}
+    .field small{color:var(--color-text-faint);font-size:var(--text-xs);line-height:1.4}
+    .field .input-wrap{position:relative;display:flex;align-items:center}
+    .field .input-wrap .prefix,.field .input-wrap .suffix{position:absolute;color:var(--color-text-faint);font-size:var(--text-sm);pointer-events:none;font-weight:600}
+    .field .input-wrap .prefix{left:.9rem}
+    .field .input-wrap .suffix{right:.9rem}
+    .field .input-wrap input{padding-left:2.2rem}
+    .field .input-wrap.suffix-active input{padding-right:2.2rem}
+    .field .input-wrap.no-prefix input{padding-left:1rem}
+    .field input,.field select{width:100%;padding:.85rem 1rem;border-radius:var(--radius-md);border:1px solid color-mix(in srgb,var(--color-text) 14%, transparent);background:var(--color-surface-2);color:var(--color-text);transition:.15s ease;font-variant-numeric:tabular-nums}
+    .field input:focus,.field select:focus{outline:none;border-color:var(--color-primary);box-shadow:0 0 0 3px color-mix(in srgb,var(--color-primary) 20%, transparent)}
+    .field input[type="number"]{-moz-appearance:textfield}
+    .field input[type="number"]::-webkit-outer-spin-button,.field input[type="number"]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+    .field input[readonly]{background:color-mix(in srgb,var(--color-primary) 5%, var(--color-surface-offset));border-color:color-mix(in srgb,var(--color-primary) 20%, transparent);color:var(--color-text);cursor:not-allowed;font-weight:700}
+    .field input[readonly]:focus{box-shadow:none;border-color:color-mix(in srgb,var(--color-primary) 20%, transparent)}
+    .field select{appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--color-text-muted) 50%),linear-gradient(135deg,var(--color-text-muted) 50%,transparent 50%);background-position:calc(100% - 1.1rem) 50%,calc(100% - .65rem) 50%;background-size:5px 5px,5px 5px;background-repeat:no-repeat;padding-right:2.5rem}
+
+    .total-fat-chip{display:inline-flex;align-items:center;gap:.6rem;padding:.5rem .9rem;background:color-mix(in srgb,var(--color-primary) 10%, var(--color-surface));border:1px solid color-mix(in srgb,var(--color-primary) 22%, transparent);border-radius:var(--radius-full);font-size:var(--text-sm);font-weight:700;color:var(--color-primary)}
+    .total-fat-chip span:first-child{color:var(--color-text-muted);font-weight:500}
+
+    .compare-row{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4);margin-top:var(--space-5);align-items:stretch}
+    .result-card{padding:var(--space-5);position:relative;display:flex;flex-direction:column}
+    .result-card h3{font-size:var(--text-lg);font-weight:600;margin-top:.5rem;margin-bottom:.25rem}
+    .result-card .sub{color:var(--color-text-muted);font-size:var(--text-sm);margin-bottom:var(--space-4)}
+    .result-card .badge{display:inline-flex;align-items:center;gap:.4rem;font-size:var(--text-xs);font-weight:700;padding:.25rem .6rem;border-radius:999px;text-transform:uppercase;letter-spacing:.04em;width:max-content}
+
+    .badge-current{background:color-mix(in srgb,var(--color-warning) 14%, transparent);color:var(--color-warning)}
+    .badge-new{background:color-mix(in srgb,var(--color-success) 16%, transparent);color:var(--color-success)}
+
+    .result-items{display:flex;flex-direction:column;flex:1}
+    .result-item{display:flex;justify-content:space-between;gap:1rem;padding:.7rem 0;border-bottom:1px solid color-mix(in srgb,var(--color-text) 7%, transparent);font-variant-numeric:tabular-nums}
+    .result-item:last-child{border-bottom:none}
+    .result-item .label{color:var(--color-text-muted);font-size:var(--text-sm)}
+    .result-item .value{font-weight:700;text-align:right;font-size:var(--text-sm)}
+    .result-item.total{padding-top:1rem;margin-top:auto;border-top:1px solid color-mix(in srgb,var(--color-text) 12%, transparent);border-bottom:none}
+    .result-item.total .label{font-weight:700;color:var(--color-text);font-size:var(--text-base)}
+    .result-item.total .value{font-size:var(--text-lg);font-family:var(--font-display)}
+
+    .item-group{padding:.5rem 0 .25rem 0;border-bottom:1px solid color-mix(in srgb,var(--color-text) 7%, transparent)}
+    .item-group:last-of-type{border-bottom:none}
+    .item-group-title{display:flex;align-items:center;gap:.5rem;font-size:var(--text-xs);font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--color-text-muted);margin-bottom:.25rem;padding:.4rem 0}
+    .item-group-title svg{width:14px;height:14px;opacity:.7}
+    .item-group .result-item{padding:.45rem 0;border-bottom:none}
+    .item-group .result-item .label{font-size:var(--text-xs)}
+    .item-group .result-item .value{font-size:var(--text-xs)}
+    .item-group .result-item.subtotal{border-top:1px dashed color-mix(in srgb,var(--color-text) 14%, transparent);padding-top:.5rem;margin-top:.25rem}
+    .item-group .result-item.subtotal .label{font-weight:700;color:var(--color-text);font-size:var(--text-sm)}
+    .item-group .result-item.subtotal .value{font-size:var(--text-sm);color:var(--color-text)}
+
+    .highlight{background:linear-gradient(180deg,color-mix(in srgb,var(--color-success) 9%, var(--color-surface)),var(--color-surface));border-color:color-mix(in srgb,var(--color-success) 32%, transparent)}
+    .warning{background:linear-gradient(180deg,color-mix(in srgb,var(--color-warning) 7%, var(--color-surface)),var(--color-surface));border-color:color-mix(in srgb,var(--color-warning) 26%, transparent)}
+
+    .savings-ribbon{margin-top:var(--space-4);background:linear-gradient(135deg,var(--color-primary),color-mix(in srgb,var(--color-primary) 60%, #2a8f9b));color:var(--color-text-inverse);padding:var(--space-6);border-radius:var(--radius-xl);position:relative;overflow:hidden;box-shadow:var(--shadow-md);display:grid;grid-template-columns:1.2fr 2fr;gap:var(--space-6);align-items:center}
+    .savings-ribbon::before{content:"";position:absolute;inset:auto -10% -60% auto;width:340px;height:340px;background:radial-gradient(circle,color-mix(in srgb,white 25%, transparent) 0%,transparent 65%);pointer-events:none}
+    .savings-ribbon h3{font-size:var(--text-sm);font-weight:600;color:color-mix(in srgb,white 80%, var(--color-primary));text-transform:uppercase;letter-spacing:.05em;font-family:var(--font-body);margin-bottom:var(--space-2)}
+    .savings-ribbon .big{font-family:var(--font-display);font-size:clamp(2.2rem,5vw,3.4rem);font-weight:600;letter-spacing:-.03em;line-height:1}
+    .savings-ribbon .meta{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-4);font-size:var(--text-sm);opacity:.95;position:relative;z-index:1}
+    .savings-ribbon .meta > div{padding:0 var(--space-4);border-left:1px solid color-mix(in srgb,white 25%, transparent)}
+    .savings-ribbon .meta > div:first-child{padding-left:0;border-left:none}
+    .savings-ribbon .meta strong{display:block;font-family:var(--font-display);font-weight:600;margin-top:.25rem;font-size:var(--text-lg)}
+
+    .pitch-card{margin-top:var(--space-4);padding:var(--space-6);background:var(--color-surface-2);border:1px dashed color-mix(in srgb,var(--color-text) 18%, transparent);border-radius:var(--radius-xl);display:grid;grid-template-columns:1fr auto;gap:var(--space-5);align-items:start}
+    .pitch-card .pitch-content h3{font-family:var(--font-body);font-size:var(--text-xs);font-weight:700;margin-bottom:var(--space-3);text-transform:uppercase;letter-spacing:.05em;color:var(--color-text-muted)}
+    .pitch-card .pitch-content p{color:var(--color-text);font-size:var(--text-sm);line-height:1.7}
+
+    .pdf-btn{display:inline-flex;align-items:center;gap:.6rem;padding:.85rem 1.2rem;background:var(--color-primary);color:var(--color-text-inverse);border:none;border-radius:var(--radius-full);font-weight:700;font-size:var(--text-sm);cursor:pointer;transition:.2s ease;white-space:nowrap;box-shadow:var(--shadow-sm)}
+    .pdf-btn:hover{background:var(--color-primary-hover);transform:translateY(-1px);box-shadow:var(--shadow-md)}
+    .pdf-btn:active{transform:translateY(0)}
+    .pdf-btn svg{width:18px;height:18px}
+
+    .hidden{display:none !important}
+
+    footer{padding:var(--space-8) 0 var(--space-12);color:var(--color-text-muted);font-size:var(--text-sm);border-top:1px solid color-mix(in srgb,var(--color-text) 10%, transparent);margin-top:var(--space-12)}
+    .muted{color:var(--color-text-muted)} .success{color:var(--color-success)} .danger{color:var(--color-error)}
+
+    @media (max-width: 1100px){
+      .form-grid{grid-template-columns:repeat(2,1fr)}
+      .form-grid.cols-3{grid-template-columns:repeat(3,1fr)}
+      .field label{min-height:auto}
+    }
+    @media (max-width: 760px){
+      .profile-selector{grid-template-columns:1fr}
+      .form-grid,.form-grid.cols-3,.form-grid.cols-2{grid-template-columns:repeat(2,1fr)}
+      .compare-row{grid-template-columns:1fr}
+      .savings-ribbon{grid-template-columns:1fr;text-align:left}
+      .savings-ribbon .meta{grid-template-columns:1fr 1fr}
+      .savings-ribbon .meta > div{padding:var(--space-3) 0;border-left:none;border-top:1px solid color-mix(in srgb,white 25%, transparent)}
+      .savings-ribbon .meta > div:first-child{border-top:none;padding-top:0}
+      .pitch-card{grid-template-columns:1fr}
+      .pdf-btn{justify-self:start}
+    }
+    @media (max-width: 460px){
+      .form-grid,.form-grid.cols-3,.form-grid.cols-2{grid-template-columns:1fr}
+      .savings-ribbon .meta{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container nav">
+      <div class="brand">
+        <div class="logo" aria-label="Logo Dux Pagamentos">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M5 7h14"></path><path d="M5 12h8"></path><path d="M5 17h14"></path><path d="M16 10l3 2-3 2"></path>
+          </svg>
+        </div>
+        <div>
+          <div>Dux Pagamentos</div>
+          <div style="font-size:var(--text-xs);color:var(--color-text-muted);font-weight:500;">Maquininha · Conta digital · Conta SPLIT</div>
+        </div>
+      </div>
+      <div class="nav-actions">
+        <button class="theme-toggle" data-theme-toggle aria-label="Alternar tema">◐</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="container hero-grid">
+        <div>
+          <div class="eyebrow">Calculadora de economia tributária</div>
+          <h1>Veja quanto seu cliente <em>deixa de pagar</em> em imposto com a conta SPLIT.</h1>
+          <p>Pague fornecedores direto pela conta SPLIT, sem que o valor circule na conta corrente do estabelecimento. Resultado: menos faturamento bruto contabilizado, menos imposto pago. Compare lado a lado o cenário atual e o cenário com a Dux Pagamentos.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="simulador">
+      <div class="container">
+
+        <div class="profile-selector" role="radiogroup" aria-label="Perfil do cliente">
+          <button type="button" class="profile-card active" data-profile="1" role="radio" aria-checked="true">
+            <div class="profile-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/></svg>
+            </div>
+            <div class="profile-title">À vista</div>
+            <div class="profile-desc">Cartão 1x + Pix</div>
+            <div class="profile-tag">Mais comum</div>
+          </button>
+
+          <button type="button" class="profile-card" data-profile="2" role="radio" aria-checked="false">
+            <div class="profile-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            </div>
+            <div class="profile-title">Parcelado</div>
+            <div class="profile-desc">1 a 12x + Pix</div>
+            <div class="profile-tag">Taxa por média</div>
+          </button>
+
+          <button type="button" class="profile-card" data-profile="3" role="radio" aria-checked="false">
+            <div class="profile-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l3-3 4 4 5-7"/></svg>
+            </div>
+            <div class="profile-title">Por faixa</div>
+            <div class="profile-desc">3 faixas + Pix</div>
+            <div class="profile-tag">1x · 2-6x · 7-12x</div>
+          </button>
+        </div>
+
+        <form class="form-card card" id="calc-form" autocomplete="off">
+          <div class="form-head">
+            <div>
+              <h3>Dados do estabelecimento</h3>
+              <p class="helper">Preencha os campos. As taxas Dux já vêm pré-cadastradas. O comparativo abaixo atualiza em tempo real.</p>
+            </div>
+            <div class="total-fat-chip">
+              <span>Faturamento total</span>
+              <span id="chipFatTotal">R$ 0,00</span>
+            </div>
+          </div>
+
+          <div data-perfil="1">
+            <div class="form-section-title">Faturamento via cartão (1x)</div>
+            <div class="form-grid cols-3">
+              <div class="field">
+                <label for="p1_fatCartao">Faturamento mensal cartão</label>
+                <div class="input-wrap"><span class="prefix">R$</span><input id="p1_fatCartao" type="number" inputmode="decimal" value="100000" min="0" step="0.01" /></div>
+              </div>
+              <div class="field">
+                <label for="p1_taxaAtual">Taxa maquininha atual</label>
+                <div class="input-wrap suffix-active no-prefix"><input id="p1_taxaAtual" type="number" inputmode="decimal" value="3.2" min="0" step="0.01" /><span class="suffix">%</span></div>
+              </div>
+              <div class="field">
+                <label for="p1_taxaNossa">Taxa Dux Pagamentos<span class="lock" title="Controlada pelo administrador"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span></label>
+                <div class="input-wrap suffix-active no-prefix"><input id="p1_taxaNossa" type="number" readonly /><span class="suffix">%</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div data-perfil="2" class="hidden">
+            <div class="form-section-title">Faturamento via cartão parcelado</div>
+            <div class="form-grid">
+              <div class="field">
+                <label for="p2_fatCartao">Faturamento mensal cartão</label>
+                <div class="input-wrap"><span class="prefix">R$</span><input id="p2_fatCartao" type="number" inputmode="decimal" value="100000" min="0" step="0.01" /></div>
+              </div>
+              <div class="field">
+                <label for="p2_parcelaMedia">Parcela média do cliente</label>
+                <select id="p2_parcelaMedia">
+                  <option value="1">1x (à vista)</option>
+                  <option value="2">2x</option><option value="3">3x</option><option value="4">4x</option>
+                  <option value="5">5x</option><option value="6" selected>6x</option><option value="7">7x</option>
+                  <option value="8">8x</option><option value="9">9x</option><option value="10">10x</option>
+                  <option value="11">11x</option><option value="12">12x</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="p2_taxaAtual">Taxa atual (média)</label>
+                <div class="input-wrap suffix-active no-prefix"><input id="p2_taxaAtual" type="number" inputmode="decimal" value="3.5" min="0" step="0.01" /><span class="suffix">%</span></div>
+              </div>
+              <div class="field">
+                <label for="p2_taxaNossa">Taxa Dux (média)<span class="lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span></label>
+                <div class="input-wrap suffix-active no-prefix"><input id="p2_taxaNossa" type="number" readonly /><span class="suffix">%</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div data-perfil="3" class="hidden">
+            <div class="form-section-title">Faturamento via cartão (distribuído por faixa)</div>
+            <div class="form-grid">
+              <div class="field">
+                <label for="p3_fatCartao">Faturamento mensal cartão</label>
+                <div class="input-wrap"><span class="prefix">R$</span><input id="p3_fatCartao" type="number" inputmode="decimal" value="100000" min="0" step="0.01" /></div>
+              </div>
+              <div class="field">
+                <label for="p3_pctF1">% Faixa 1 (1x)</label>
+                <div class="input-wrap suffix-active no-prefix"><input id="p3_pctF1" type="number" inputmode="decimal" value="30" min="0" max="100" step="1" /><span class="suffix">%</span></div>
+              </div>
+              <div class="field">
+                <label for="p3_pctF2">% Faixa 2 (2 a 6x)</label>
+                <div class="input-wrap suffix-active no-prefix"><input id="p3_pctF2" type="number" inputmode="decimal" value="50" min="0" max="100" step="1" /><span class="suffix">%</span></div>
+              </div>
+              <div class="field">
+                <label for="p3_pctF3">% Faixa 3 (7 a 12x)</label>
+                <div class="input-wrap suffix-active no-prefix"><input id="p3_pctF3" type="number" inputmode="decimal" value="20" readonly /><span class="suffix">%</span></div>
+                <small>Calculado automaticamente (100% − F1 − F2)</small>
+              </div>
+            </div>
+
+            <div class="form-section-title">Taxas por faixa</div>
+            <div class="form-grid cols-3">
+              <div class="field">
+                <label for="p3_taxaAtualF1">Taxa atual Faixa 1 (1x)</label>
+                <div class="input-wrap suffix-active no-prefix"><input id="p3_taxaAtualF1" type="number" inputmode="decimal" value="3.2" min="0" step="0.01" /><span class="suffix">%</span></div>
+              </div>
+              <div class="field">
+                <label for="p3_taxaAtualF2">Taxa atual Faixa 2 (2-6x)</label>
+                <div class="input-wrap suffix-active no-prefix"><input id="p3_taxaAtualF2" type="number" inputmode="decimal" value="3.6" min="0" step="0.01" /><span class="suffix">%</span></div>
+              </div>
+              <div class="field">
+                <label for="p3_taxaAtualF3">Taxa atual Faixa 3 (7-12x)</label>
+                <div class="input-wrap suffix-active no-prefix"><input id="p3_taxaAtualF3" type="number" inputmode="decimal" value="4.0" min="0" step="0.01" /><span class="suffix">%</span></div>
+              </div>
+              <div class="field">
+                <label for="p3_taxaNossaF1">Taxa Dux Faixa 1 (1x)<span class="lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span></label>
+                <div class="input-wrap suffix-active no-prefix"><input id="p3_taxaNossaF1" type="number" readonly /><span class="suffix">%</span></div>
+              </div>
+              <div class="field">
+                <label for="p3_taxaNossaF2">Taxa Dux Faixa 2 (2-6x)<span class="lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span></label>
+                <div class="input-wrap suffix-active no-prefix"><input id="p3_taxaNossaF2" type="number" readonly /><span class="suffix">%</span></div>
+              </div>
+              <div class="field">
+                <label for="p3_taxaNossaF3">Taxa Dux Faixa 3 (7-12x)<span class="lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span></label>
+                <div class="input-wrap suffix-active no-prefix"><input id="p3_taxaNossaF3" type="number" readonly /><span class="suffix">%</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-section-title">Faturamento via Pix</div>
+          <div class="form-grid cols-3">
+            <div class="field">
+              <label for="fatPix">Faturamento mensal Pix</label>
+              <div class="input-wrap"><span class="prefix">R$</span><input id="fatPix" type="number" inputmode="decimal" value="40000" min="0" step="0.01" /></div>
+            </div>
+            <div class="field">
+              <label for="taxaPixAtual">Taxa Pix atual</label>
+              <div class="input-wrap suffix-active no-prefix"><input id="taxaPixAtual" type="number" inputmode="decimal" value="0.99" min="0" step="0.01" /><span class="suffix">%</span></div>
+            </div>
+            <div class="field">
+              <label for="taxaPixNossa">Taxa Pix Dux<span class="lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span></label>
+              <div class="input-wrap suffix-active no-prefix"><input id="taxaPixNossa" type="number" readonly /><span class="suffix">%</span></div>
+            </div>
+          </div>
+
+          <div class="form-section-title">Tributação e SPLIT</div>
+          <div class="form-grid cols-2">
+            <div class="field">
+              <label for="imposto">% Médio de Imposto Atual</label>
+              <div class="input-wrap suffix-active no-prefix"><input id="imposto" type="number" inputmode="decimal" value="8" min="0" step="0.01" /><span class="suffix">%</span></div>
+            </div>
+            <div class="field">
+              <label for="splitFornecedor">% pago a fornecedores via SPLIT</label>
+              <div class="input-wrap suffix-active no-prefix"><input id="splitFornecedor" type="number" inputmode="decimal" value="30" min="0" max="90" step="1" /><span class="suffix">%</span></div>
+              <small>Limite de 90%.</small>
+            </div>
+          </div>
+        </form>
+
+        <div class="compare-row">
+          <article class="result-card warning">
+            <span class="badge badge-current">Cenário atual</span>
+            <h3>Sem a conta SPLIT</h3>
+            <p class="sub">Todo o faturamento (cartão + Pix) cai na conta corrente e é tributado integralmente.</p>
+            <div class="result-items">
+              <div class="result-item"><span class="label">% Médio de Imposto Atual</span><span class="value" id="rImpostoPercent">8,00%</span></div>
+              <div class="result-item"><span class="label">Faturamento total (base tributável)</span><span class="value" id="rBaseAtual">R$ 0,00</span></div>
+              <div class="result-item"><span class="label">Imposto estimado</span><span class="value" id="rImpostoAtual">R$ 0,00</span></div>
+              <div class="item-group">
+                <div class="item-group-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/></svg><span id="rCartaoLabelAtual">Cartão</span></div>
+                <div id="rCartaoAtualLines"></div>
+              </div>
+              <div class="item-group">
+                <div class="item-group-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L4 10l8 8 8-8z"/></svg>Pix</div>
+                <div class="result-item"><span class="label">Faturamento</span><span class="value" id="rFatPixAtual">R$ 0,00</span></div>
+                <div class="result-item"><span class="label">Taxa Pix</span><span class="value" id="rTaxaPixAtual">R$ 0,00</span></div>
+              </div>
+              <div class="result-item total"><span class="label">Custo total</span><span class="value" id="rTotalAtual">R$ 0,00</span></div>
+            </div>
+          </article>
+
+          <article class="result-card highlight">
+            <span class="badge badge-new">Com Dux · SPLIT</span>
+            <h3>Com a conta SPLIT</h3>
+            <p class="sub">Pagamentos a fornecedores saem direto da SPLIT, reduzindo a base tributável.</p>
+            <div class="result-items">
+              <div class="result-item"><span class="label">Pago a fornecedores via SPLIT</span><span class="value" id="rSplit">R$ 0,00</span></div>
+              <div class="result-item"><span class="label">Base tributável (conta corrente)</span><span class="value" id="rBaseLiquida">R$ 0,00</span></div>
+              <div class="result-item"><span class="label">Imposto estimado</span><span class="value" id="rImpostoNovo">R$ 0,00</span></div>
+              <div class="item-group">
+                <div class="item-group-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/></svg><span id="rCartaoLabelNovo">Cartão</span></div>
+                <div id="rCartaoNovoLines"></div>
+              </div>
+              <div class="item-group">
+                <div class="item-group-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L4 10l8 8 8-8z"/></svg>Pix</div>
+                <div class="result-item"><span class="label">Faturamento</span><span class="value" id="rFatPixNovo">R$ 0,00</span></div>
+                <div class="result-item"><span class="label">Taxa Pix Dux</span><span class="value" id="rTaxaPixNova">R$ 0,00</span></div>
+              </div>
+              <div class="result-item"><span class="label">Taxa de transferência (1,25%)</span><span class="value" id="rTaxaTransfer">R$ 0,00</span></div>
+              <div class="result-item total"><span class="label">Custo total</span><span class="value" id="rTotalNovo">R$ 0,00</span></div>
+            </div>
+          </article>
+        </div>
+
+        <article class="savings-ribbon" aria-live="polite">
+          <div>
+            <h3>Economia tributária estimada</h3>
+            <div class="big" id="rEconomia">R$ 0,00</div>
+          </div>
+          <div class="meta">
+            <div>Imposto economizado/mês<strong id="rImpostoEconomizado">R$ 0,00</strong></div>
+            <div>Redução no custo total<strong id="rReducao">0,00%</strong></div>
+            <div>Economia em 12 meses<strong id="rAnual">R$ 0,00</strong></div>
+          </div>
+        </article>
+
+        <div class="pitch-card">
+          <div class="pitch-content">
+            <h3>Argumento pronto para venda</h3>
+            <p id="pitchAuto"></p>
+          </div>
+          <button type="button" class="pdf-btn" id="btnPdf" aria-label="Baixar comparativo em PDF">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            Baixar PDF
+          </button>
+        </div>
+
+      </div>
+    </section>
+
+    <footer>
+      <div class="container">
+        Página comercial demonstrativa · Dux Pagamentos. Os valores são estimativas baseadas nos parâmetros informados. SPLIT permitido apenas para fornecedores legítimos do estabelecimento, conforme regulamento vigente.
+      </div>
+    </footer>
+  </main>
+
+  <script>
+    // =====================================================================
+    // TAXAS DUX (HARDCODED) — futuramente migrar para Supabase
+    // Estrutura compatível com migração: cada perfil é uma "tabela" no banco.
+    // =====================================================================
+    const TAXAS_DUX = {
+      perfil1: { cartao_1x: 2.20, pix: 0.49 },
+      perfil2: {
+        parcelas: { 1:2.20, 2:2.40, 3:2.55, 4:2.70, 5:2.85, 6:3.00, 7:3.15, 8:3.30, 9:3.45, 10:3.60, 11:3.75, 12:3.90 },
+        pix: 0.49
+      },
+      perfil3: { faixa1: 2.10, faixa2: 2.52, faixa3: 2.92, pix: 0.49 },
+      geral: { taxaTransferencia: 1.25, limiteSplit: 90 }
+    };
+
+    const $ = (id) => document.getElementById(id);
+    const money = (v) => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v || 0);
+    const pct = (v) => new Intl.NumberFormat('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}).format(v || 0) + '%';
+
+    let perfilAtivo = 1;
+    let estadoCalculo = {};
+
+    function preencherTaxasDux(){
+      $('p1_taxaNossa').value = TAXAS_DUX.perfil1.cartao_1x.toFixed(2);
+      atualizarTaxaPerfil2();
+      $('p3_taxaNossaF1').value = TAXAS_DUX.perfil3.faixa1.toFixed(2);
+      $('p3_taxaNossaF2').value = TAXAS_DUX.perfil3.faixa2.toFixed(2);
+      $('p3_taxaNossaF3').value = TAXAS_DUX.perfil3.faixa3.toFixed(2);
+      const pixDux = perfilAtivo === 1 ? TAXAS_DUX.perfil1.pix
+                   : perfilAtivo === 2 ? TAXAS_DUX.perfil2.pix
+                   : TAXAS_DUX.perfil3.pix;
+      $('taxaPixNossa').value = pixDux.toFixed(2);
+    }
+
+    function atualizarTaxaPerfil2(){
+      const parcela = parseInt($('p2_parcelaMedia').value || 1, 10);
+      const taxa = TAXAS_DUX.perfil2.parcelas[parcela] || TAXAS_DUX.perfil2.parcelas[1];
+      $('p2_taxaNossa').value = taxa.toFixed(2);
+    }
+
+    function selecionarPerfil(p){
+      perfilAtivo = p;
+      document.querySelectorAll('.profile-card').forEach(c => {
+        const ativo = parseInt(c.dataset.profile, 10) === p;
+        c.classList.toggle('active', ativo);
+        c.setAttribute('aria-checked', ativo ? 'true' : 'false');
+      });
+      document.querySelectorAll('[data-perfil]').forEach(div => {
+        const ativo = parseInt(div.dataset.perfil, 10) === p;
+        div.classList.toggle('hidden', !ativo);
+      });
+      preencherTaxasDux();
+      calcular();
+    }
+
+    document.querySelectorAll('.profile-card').forEach(card => {
+      card.addEventListener('click', () => selecionarPerfil(parseInt(card.dataset.profile, 10)));
+    });
+
+    function ajustarFaixa3(){
+      let f1 = parseFloat($('p3_pctF1').value || 0);
+      let f2 = parseFloat($('p3_pctF2').value || 0);
+      f1 = Math.min(100, Math.max(0, f1));
+      f2 = Math.min(100, Math.max(0, f2));
+      if (f1 + f2 > 100) {
+        f2 = 100 - f1;
+        $('p3_pctF2').value = f2;
+      }
+      const f3 = Math.max(0, 100 - f1 - f2);
+      $('p3_pctF3').value = f3;
+    }
+
+    $('p3_pctF1').addEventListener('input', ajustarFaixa3);
+    $('p3_pctF2').addEventListener('input', ajustarFaixa3);
+    $('p2_parcelaMedia').addEventListener('change', () => { atualizarTaxaPerfil2(); calcular(); });
+
+    function calcular(){
+      const impostoPct = parseFloat($('imposto').value || 0);
+      const imposto = impostoPct / 100;
+      const fatPix = parseFloat($('fatPix').value || 0);
+      const taxaPixAtual = parseFloat($('taxaPixAtual').value || 0) / 100;
+      const taxaPixNossa = parseFloat($('taxaPixNossa').value || 0) / 100;
+      const splitPct = Math.min(TAXAS_DUX.geral.limiteSplit, Math.max(0, parseFloat($('splitFornecedor').value || 0)));
+      const split = splitPct / 100;
+      const taxaTransfer = TAXAS_DUX.geral.taxaTransferencia / 100;
+
+      let fatCartao = 0;
+      let custoCartaoAtual = 0;
+      let custoCartaoNovo = 0;
+      let cartaoAtualLines = [];
+      let cartaoNovoLines = [];
+      let labelCartaoAtual = 'Cartão';
+      let labelCartaoNovo = 'Cartão';
+
+      if (perfilAtivo === 1) {
+        fatCartao = parseFloat($('p1_fatCartao').value || 0);
+        const tAtual = parseFloat($('p1_taxaAtual').value || 0) / 100;
+        const tNova = parseFloat($('p1_taxaNossa').value || 0) / 100;
+        custoCartaoAtual = fatCartao * tAtual;
+        custoCartaoNovo = fatCartao * tNova;
+        labelCartaoAtual = 'Cartão (1x)';
+        labelCartaoNovo = 'Cartão (1x)';
+        cartaoAtualLines = [
+          { label: 'Faturamento', value: money(fatCartao) },
+          { label: 'Taxa maquininha', value: money(custoCartaoAtual) },
+        ];
+        cartaoNovoLines = [
+          { label: 'Faturamento', value: money(fatCartao) },
+          { label: 'Taxa Dux', value: money(custoCartaoNovo) },
+        ];
+      }
+      else if (perfilAtivo === 2) {
+        fatCartao = parseFloat($('p2_fatCartao').value || 0);
+        const parcela = parseInt($('p2_parcelaMedia').value || 1, 10);
+        const tAtual = parseFloat($('p2_taxaAtual').value || 0) / 100;
+        const tNova = parseFloat($('p2_taxaNossa').value || 0) / 100;
+        custoCartaoAtual = fatCartao * tAtual;
+        custoCartaoNovo = fatCartao * tNova;
+        labelCartaoAtual = `Cartão (média ${parcela}x)`;
+        labelCartaoNovo = `Cartão (média ${parcela}x)`;
+        cartaoAtualLines = [
+          { label: 'Faturamento', value: money(fatCartao) },
+          { label: `Taxa maquininha (${parcela}x)`, value: money(custoCartaoAtual) },
+        ];
+        cartaoNovoLines = [
+          { label: 'Faturamento', value: money(fatCartao) },
+          { label: `Taxa Dux (${parcela}x)`, value: money(custoCartaoNovo) },
+        ];
+      }
+      else {
+        fatCartao = parseFloat($('p3_fatCartao').value || 0);
+        const pF1 = parseFloat($('p3_pctF1').value || 0) / 100;
+        const pF2 = parseFloat($('p3_pctF2').value || 0) / 100;
+        const pF3 = parseFloat($('p3_pctF3').value || 0) / 100;
+        const fatF1 = fatCartao * pF1;
+        const fatF2 = fatCartao * pF2;
+        const fatF3 = fatCartao * pF3;
+        const tAtualF1 = parseFloat($('p3_taxaAtualF1').value || 0) / 100;
+        const tAtualF2 = parseFloat($('p3_taxaAtualF2').value || 0) / 100;
+        const tAtualF3 = parseFloat($('p3_taxaAtualF3').value || 0) / 100;
+        const tNovaF1  = parseFloat($('p3_taxaNossaF1').value || 0) / 100;
+        const tNovaF2  = parseFloat($('p3_taxaNossaF2').value || 0) / 100;
+        const tNovaF3  = parseFloat($('p3_taxaNossaF3').value || 0) / 100;
+        const cAtualF1 = fatF1 * tAtualF1;
+        const cAtualF2 = fatF2 * tAtualF2;
+        const cAtualF3 = fatF3 * tAtualF3;
+        const cNovoF1  = fatF1 * tNovaF1;
+        const cNovoF2  = fatF2 * tNovaF2;
+        const cNovoF3  = fatF3 * tNovaF3;
+        custoCartaoAtual = cAtualF1 + cAtualF2 + cAtualF3;
+        custoCartaoNovo  = cNovoF1 + cNovoF2 + cNovoF3;
+        labelCartaoAtual = 'Cartão (por faixa)';
+        labelCartaoNovo = 'Cartão (por faixa)';
+        cartaoAtualLines = [
+          { label: `Faixa 1 — 1x (${pct(pF1*100)})`, value: money(fatF1) },
+          { label: '   Taxa Faixa 1', value: money(cAtualF1) },
+          { label: `Faixa 2 — 2-6x (${pct(pF2*100)})`, value: money(fatF2) },
+          { label: '   Taxa Faixa 2', value: money(cAtualF2) },
+          { label: `Faixa 3 — 7-12x (${pct(pF3*100)})`, value: money(fatF3) },
+          { label: '   Taxa Faixa 3', value: money(cAtualF3) },
+          { label: 'Total taxas cartão', value: money(custoCartaoAtual), subtotal: true },
+        ];
+        cartaoNovoLines = [
+          { label: `Faixa 1 — 1x (${pct(pF1*100)})`, value: money(fatF1) },
+          { label: '   Taxa Dux F1', value: money(cNovoF1) },
+          { label: `Faixa 2 — 2-6x (${pct(pF2*100)})`, value: money(fatF2) },
+          { label: '   Taxa Dux F2', value: money(cNovoF2) },
+          { label: `Faixa 3 — 7-12x (${pct(pF3*100)})`, value: money(fatF3) },
+          { label: '   Taxa Dux F3', value: money(cNovoF3) },
+          { label: 'Total taxas cartão', value: money(custoCartaoNovo), subtotal: true },
+        ];
+      }
+
+      const fatTotal = fatCartao + fatPix;
+      const custoPixAtual = fatPix * taxaPixAtual;
+      const custoPixNovo = fatPix * taxaPixNossa;
+
+      const impostoAtual = fatTotal * imposto;
+      const totalAtual = impostoAtual + custoCartaoAtual + custoPixAtual;
+
+      const valorSplit = fatTotal * split;
+      const baseContaCorrente = fatTotal - valorSplit;
+      const impostoNovo = baseContaCorrente * imposto;
+      const custoTransfer = fatTotal * taxaTransfer;
+      const totalNovo = impostoNovo + custoCartaoNovo + custoPixNovo + custoTransfer;
+
+      const economia = totalAtual - totalNovo;
+      const reducao = totalAtual > 0 ? (economia / totalAtual) * 100 : 0;
+      const impostoEconomizado = impostoAtual - impostoNovo;
+      const economiaAnual = economia * 12;
+
+      $('chipFatTotal').textContent = money(fatTotal);
+      $('rImpostoPercent').textContent = pct(impostoPct);
+      $('rBaseAtual').textContent = money(fatTotal);
+      $('rImpostoAtual').textContent = money(impostoAtual);
+      $('rFatPixAtual').textContent = money(fatPix);
+      $('rTaxaPixAtual').textContent = money(custoPixAtual);
+      $('rTotalAtual').textContent = money(totalAtual);
+      $('rSplit').textContent = money(valorSplit);
+      $('rBaseLiquida').textContent = money(baseContaCorrente);
+      $('rImpostoNovo').textContent = money(impostoNovo);
+      $('rFatPixNovo').textContent = money(fatPix);
+      $('rTaxaPixNova').textContent = money(custoPixNovo);
+      $('rTaxaTransfer').textContent = money(custoTransfer);
+      $('rTotalNovo').textContent = money(totalNovo);
+      $('rEconomia').textContent = money(economia);
+      $('rImpostoEconomizado').textContent = money(impostoEconomizado);
+      $('rAnual').textContent = money(economiaAnual);
+      $('rReducao').textContent = pct(reducao);
+      $('rCartaoLabelAtual').textContent = labelCartaoAtual;
+      $('rCartaoLabelNovo').textContent = labelCartaoNovo;
+      renderLines('rCartaoAtualLines', cartaoAtualLines);
+      renderLines('rCartaoNovoLines', cartaoNovoLines);
+
+      const pitch = `Hoje, somando cartão (${money(fatCartao)}) e Pix (${money(fatPix)}), seu cliente fatura ${money(fatTotal)} por mês e paga ${money(impostoAtual)} de imposto sobre o total. Direcionando ${pct(splitPct)} desse faturamento para fornecedores via conta SPLIT, esse valor não entra na base tributável e o imposto cai para ${money(impostoNovo)} — uma economia tributária de ${money(impostoEconomizado)} por mês, ou ${money(impostoEconomizado*12)} por ano. Mesmo somando as taxas Dux Pagamentos e a taxa de transferência de 1,25%, o custo total final é ${money(totalNovo)} contra ${money(totalAtual)} de hoje — uma redução de ${pct(reducao)}.`;
+      $('pitchAuto').textContent = pitch;
+
+      estadoCalculo = {
+        perfil: perfilAtivo,
+        impostoPct, fatCartao, fatPix, fatTotal, splitPct,
+        impostoAtual, custoCartaoAtual, custoPixAtual, totalAtual,
+        valorSplit, baseContaCorrente, impostoNovo, custoCartaoNovo, custoPixNovo, custoTransfer, totalNovo,
+        economia, reducao, impostoEconomizado, economiaAnual, pitch,
+        labelCartaoAtual, labelCartaoNovo, cartaoAtualLines, cartaoNovoLines,
+      };
+    }
+
+    function renderLines(containerId, lines){
+      const c = $(containerId);
+      c.innerHTML = '';
+      lines.forEach(({label, value, subtotal}) => {
+        const div = document.createElement('div');
+        div.className = 'result-item' + (subtotal ? ' subtotal' : '');
+        div.innerHTML = `<span class="label">${label}</span><span class="value">${value}</span>`;
+        c.appendChild(div);
+      });
+    }
+
+    document.querySelectorAll('input').forEach(el => el.addEventListener('input', calcular));
+
+    function gerarPDF(){
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ unit:'pt', format:'a4' });
+      const pageW = doc.internal.pageSize.getWidth();
+      const margin = 40;
+      const e = estadoCalculo;
+      const perfilNome = e.perfil === 1 ? 'À vista' : e.perfil === 2 ? 'Parcelado por média' : 'Por faixa';
+
+      doc.setFillColor(1, 105, 111);
+      doc.rect(0, 0, pageW, 80, 'F');
+      doc.setTextColor(255,255,255);
+      doc.setFont('helvetica','bold');
+      doc.setFontSize(20);
+      doc.text('Dux Pagamentos', margin, 38);
+      doc.setFontSize(11);
+      doc.setFont('helvetica','normal');
+      doc.text('Comparativo de economia tributária com conta SPLIT', margin, 58);
+      doc.setFontSize(9);
+      doc.text(`Perfil: ${perfilNome}`, pageW - margin, 38, { align:'right' });
+
+      let y = 110;
+      doc.setTextColor(40,37,29);
+      doc.setFont('helvetica','bold');
+      doc.setFontSize(13);
+      doc.text('Dados informados', margin, y);
+      y += 18;
+      doc.setFont('helvetica','normal');
+      doc.setFontSize(10);
+      doc.setTextColor(80,80,80);
+      const dados = [
+        ['Perfil de cliente', perfilNome],
+        ['% Médio de Imposto Atual', pct(e.impostoPct)],
+        ['Faturamento cartão', money(e.fatCartao)],
+        ['Faturamento Pix', money(e.fatPix)],
+        ['Faturamento total', money(e.fatTotal)],
+        ['% para fornecedores via SPLIT', pct(e.splitPct)],
+      ];
+      dados.forEach(([l,v]) => {
+        doc.text(l, margin, y);
+        doc.text(v, pageW - margin, y, { align:'right' });
+        y += 15;
+      });
+
+      y += 14;
+      const colW = (pageW - margin*2 - 16) / 2;
+      const xL = margin, xR = margin + colW + 16;
+      const cardH = 260;
+
+      doc.setFillColor(252, 245, 238);
+      doc.roundedRect(xL, y, colW, cardH, 8, 8, 'F');
+      doc.setFillColor(243, 250, 240);
+      doc.roundedRect(xR, y, colW, cardH, 8, 8, 'F');
+
+      doc.setFont('helvetica','bold');
+      doc.setFontSize(11);
+      doc.setTextColor(150, 66, 25);
+      doc.text('CENÁRIO ATUAL', xL + 14, y + 22);
+      doc.setTextColor(67, 122, 34);
+      doc.text('COM DUX · SPLIT', xR + 14, y + 22);
+
+      doc.setTextColor(40,37,29);
+      doc.setFontSize(11);
+      doc.text('Sem a conta SPLIT', xL + 14, y + 40);
+      doc.text('Com a conta SPLIT', xR + 14, y + 40);
+
+      doc.setFont('helvetica','normal');
+      doc.setFontSize(8.5);
+      doc.setTextColor(90,90,90);
+
+      const itensAtual = [
+        ['% Médio de Imposto', pct(e.impostoPct)],
+        ['Base tributável', money(e.fatTotal)],
+        ['Imposto estimado', money(e.impostoAtual)],
+        [`${e.labelCartaoAtual} · subtotal`, money(e.custoCartaoAtual)],
+        ['Pix · taxa', money(e.custoPixAtual)],
+      ];
+      const itensNovo = [
+        ['Pago via SPLIT', money(e.valorSplit)],
+        ['Base tributável (cc)', money(e.baseContaCorrente)],
+        ['Imposto estimado', money(e.impostoNovo)],
+        [`${e.labelCartaoNovo} · subtotal`, money(e.custoCartaoNovo)],
+        ['Pix · taxa Dux', money(e.custoPixNovo)],
+        ['Transferência (1,25%)', money(e.custoTransfer)],
+      ];
+
+      let yi = y + 60;
+      itensAtual.forEach(([l,v]) => {
+        doc.text(l, xL + 14, yi);
+        doc.setFont('helvetica','bold');
+        doc.setTextColor(40,37,29);
+        doc.text(v, xL + colW - 14, yi, { align:'right' });
+        doc.setFont('helvetica','normal');
+        doc.setTextColor(90,90,90);
+        yi += 14;
+      });
+
+      let yj = y + 60;
+      itensNovo.forEach(([l,v]) => {
+        doc.text(l, xR + 14, yj);
+        doc.setFont('helvetica','bold');
+        doc.setTextColor(40,37,29);
+        doc.text(v, xR + colW - 14, yj, { align:'right' });
+        doc.setFont('helvetica','normal');
+        doc.setTextColor(90,90,90);
+        yj += 14;
+      });
+
+      const yTotal = y + cardH - 30;
+      doc.setDrawColor(200,200,200);
+      doc.line(xL + 14, yTotal - 8, xL + colW - 14, yTotal - 8);
+      doc.line(xR + 14, yTotal - 8, xR + colW - 14, yTotal - 8);
+
+      doc.setFont('helvetica','bold');
+      doc.setFontSize(11);
+      doc.setTextColor(40,37,29);
+      doc.text('Custo total', xL + 14, yTotal + 6);
+      doc.text('Custo total', xR + 14, yTotal + 6);
+      doc.setFontSize(13);
+      doc.text(money(e.totalAtual), xL + colW - 14, yTotal + 6, { align:'right' });
+      doc.text(money(e.totalNovo), xR + colW - 14, yTotal + 6, { align:'right' });
+
+      y += cardH + 20;
+      doc.setFillColor(1, 105, 111);
+      doc.roundedRect(margin, y, pageW - margin*2, 90, 8, 8, 'F');
+      doc.setTextColor(255,255,255);
+      doc.setFont('helvetica','bold');
+      doc.setFontSize(10);
+      doc.text('ECONOMIA TRIBUTÁRIA ESTIMADA', margin + 16, y + 22);
+      doc.setFontSize(22);
+      doc.text(money(e.economia), margin + 16, y + 50);
+      doc.setFontSize(9);
+      doc.setFont('helvetica','normal');
+      doc.text('Imposto economizado/mês', margin + 16, y + 70);
+      doc.setFont('helvetica','bold');
+      doc.text(money(e.impostoEconomizado), margin + 16, y + 84);
+      doc.setFont('helvetica','normal');
+      doc.text('Redução no custo total', margin + 200, y + 70);
+      doc.setFont('helvetica','bold');
+      doc.text(pct(e.reducao), margin + 200, y + 84);
+      doc.setFont('helvetica','normal');
+      doc.text('Economia em 12 meses', margin + 380, y + 70);
+      doc.setFont('helvetica','bold');
+      doc.text(money(e.economiaAnual), margin + 380, y + 84);
+
+      y += 110;
+      doc.setTextColor(40,37,29);
+      doc.setFont('helvetica','bold');
+      doc.setFontSize(11);
+      doc.text('Argumento pronto para venda', margin, y);
+      y += 16;
+      doc.setFont('helvetica','normal');
+      doc.setFontSize(10);
+      doc.setTextColor(80,80,80);
+      const wrapped = doc.splitTextToSize(e.pitch, pageW - margin*2);
+      doc.text(wrapped, margin, y);
+
+      doc.setFontSize(8);
+      doc.setTextColor(140,140,140);
+      doc.text('Dux Pagamentos · Documento comercial demonstrativo. Valores estimados.', margin, doc.internal.pageSize.getHeight() - 30);
+
+      doc.save(`Dux-Pagamentos-Comparativo-Perfil${e.perfil}.pdf`);
+    }
+
+    $('btnPdf').addEventListener('click', gerarPDF);
+
+    (function(){
+      const t=document.querySelector('[data-theme-toggle]'), r=document.documentElement;
+      let d=matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light';
+      r.setAttribute('data-theme',d);
+      t.addEventListener('click',()=>{d=d==='dark'?'light':'dark';r.setAttribute('data-theme',d);});
+    })();
+
+    preencherTaxasDux();
+    selecionarPerfil(1);
+  </script>
+</body>
+</html>
